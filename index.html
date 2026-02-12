@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bhagavad Gita Chapter 1</title>
+    <style>
+      :root {
+        --bg: #f8f5ef;
+        --card: #ffffff;
+        --text: #1f1f1f;
+        --muted: #666;
+        --accent: #8b3d00;
+        --border: #e8dbc8;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        background: linear-gradient(135deg, #8b3d00, #ba6d2e);
+        color: #fff;
+        padding: 20px 16px;
+      }
+      header h1 { margin: 0 0 6px; font-size: 1.5rem; }
+      header p { margin: 0; opacity: 0.95; }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .controls {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 160px;
+        margin-bottom: 14px;
+      }
+      input, select, button {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 0.95rem;
+        background: #fff;
+      }
+      .status {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .verse {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .verse h2 { margin: 0 0 10px; color: var(--accent); font-size: 1.05rem; }
+      .sanskrit { font-size: 1.25rem; line-height: 1.75; }
+      .line { margin-top: 8px; line-height: 1.6; }
+      .label { font-weight: 700; }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .actions button { width: auto; cursor: pointer; }
+      @media (max-width: 640px) {
+        .controls { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Bhagavad Gita — Chapter 1</h1>
+      <p>Simple full web app (all 47 verses) with Sanskrit, transliteration, and translation.</p>
+    </header>
+
+    <main>
+      <div class="controls">
+        <input id="search" type="search" placeholder="Search transliteration / translation..." />
+        <select id="verseSelect">
+          <option value="all">All verses</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button id="topBtn" type="button">Go to top</button>
+        <button id="reloadBtn" type="button">Reload from API</button>
+      </div>
+
+      <p id="status" class="status">Loading Chapter 1...</p>
+      <div id="verses"></div>
+    </main>
+
+    <script>
+      const FALLBACK_VERSES = [
+        { number: 1, sanskrit: "धृतराष्ट्र उवाच । धर्मक्षेत्रे कुरुक्षेत्रे समवेता युयुत्सवः । मामकाः पाण्डवाश्चैव किमकुर्वत सञ्जय ॥ १.१ ॥", transliteration: "dhṛtarāṣṭra uvāca | dharma-kṣetre kuru-kṣetre samavetā yuyutsavaḥ | māmakāḥ pāṇḍavāś caiva kim akurvata sañjaya || 1.1 ||", translation: "Dhritarashtra said: O Sanjaya, what did my sons and the sons of Pandu do at Kurukshetra?" },
+        { number: 2, sanskrit: "सञ्जय उवाच । दृष्ट्वा तु पाण्डवानीकं व्यूढं दुर्योधनस्तदा । आचार्यमुपसङ्गम्य राजा वचनमब्रवीत् ॥ १.२ ॥", transliteration: "sañjaya uvāca | dṛṣṭvā tu pāṇḍavānīkaṁ vyūḍhaṁ duryodhanas tadā | ācāryam upasaṅgamya rājā vacanam abravīt || 1.2 ||", translation: "Sanjaya said: Seeing the Pandava army in formation, King Duryodhana approached his teacher and spoke." },
+        { number: 3, sanskrit: "पश्यैतां पाण्डुपुत्राणामाचार्य महतीं चमूम् । व्यूढां द्रुपदपुत्रेण तव शिष्येण धीमता ॥ १.३ ॥", transliteration: "paśyaitāṁ pāṇḍu-putrāṇām ācārya mahatīṁ camūm | vyūḍhāṁ drupada-putreṇa tava śiṣyeṇa dhīmatā || 1.3 ||", translation: "Behold this mighty army of the sons of Pandu, arranged by your wise disciple, the son of Drupada." },
+        { number: 4, sanskrit: "अत्र शूरा महेष्वासा भीमार्जुनसमा युधि । युयुधानो विराटश्च द्रुपदश्च महारथः ॥ १.४ ॥", transliteration: "atra śūrā maheṣv-āsā bhīmārjuna-samā yudhi | yuyudhāno virāṭaś ca drupadaś ca mahārathaḥ || 1.4 ||", translation: "Here are heroic bowmen equal to Bhima and Arjuna in battle." },
+        { number: 5, sanskrit: "धृष्टकेतुश्चेकितानः काशिराजश्च वीर्यवान् । पुरुजित्कुन्तिभोजश्च शैब्यश्च नरपुङ्गवः ॥ १.५ ॥", transliteration: "dhṛṣṭaketuś cekitānaḥ kāśirājaś ca vīryavān | purujit kuntibhojaś ca śaibyaś ca nara-puṅgavaḥ || 1.5 ||", translation: "Also present are many other great warriors, including Dhrishtaketu and the king of Kashi." }
+      ];
+
+      function buildFallbackFullChapter() {
+        const verses = [];
+        for (let i = 1; i <= 47; i += 1) {
+          const base = FALLBACK_VERSES.find((v) => v.number === i) || {
+            number: i,
+            sanskrit: `श्लोक ${i} (संपूर्ण पाठ API से लोड होगा)।`,
+            transliteration: `śloka ${i} (full transliteration loads from API).`,
+            translation: `Verse ${i}: Translation loads from API. Click “Reload from API”.`
+          };
+          verses.push(base);
+        }
+        return verses;
+      }
+
+      async function loadFromApi() {
+        const urls = Array.from({ length: 47 }, (_, i) => `https://bhagavadgitaapi.in/slok/1/${i + 1}/`);
+        const results = await Promise.allSettled(
+          urls.map((url) => fetch(url).then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          }))
+        );
+
+        const verses = [];
+        for (const result of results) {
+          if (result.status !== "fulfilled") return null;
+          const d = result.value || {};
+          verses.push({
+            number: Number(d.verse) || verses.length + 1,
+            sanskrit: d.slok || d.text || "",
+            transliteration: d.transliteration || "",
+            translation: d.tej?.ht || d.siva?.et || d.chinmay?.hc || ""
+          });
+        }
+        verses.sort((a, b) => a.number - b.number);
+        return verses.length === 47 ? verses : null;
+      }
+
+      const verseContainer = document.getElementById("verses");
+      const statusEl = document.getElementById("status");
+      const searchEl = document.getElementById("search");
+      const selectEl = document.getElementById("verseSelect");
+      const topBtn = document.getElementById("topBtn");
+      const reloadBtn = document.getElementById("reloadBtn");
+
+      let allVerses = buildFallbackFullChapter();
+
+      function render() {
+        const q = searchEl.value.trim().toLowerCase();
+        const chosen = selectEl.value;
+
+        let list = allVerses;
+        if (chosen !== "all") list = list.filter((v) => String(v.number) === chosen);
+        if (q) {
+          list = list.filter((v) =>
+            `${v.sanskrit} ${v.transliteration} ${v.translation}`.toLowerCase().includes(q)
+          );
+        }
+
+        verseContainer.innerHTML = "";
+        if (!list.length) {
+          verseContainer.innerHTML = '<p class="status">No verses found for this filter.</p>';
+          return;
+        }
+
+        list.forEach((v) => {
+          const card = document.createElement("section");
+          card.className = "verse";
+          card.innerHTML = `
+            <h2>Verse ${v.number}</h2>
+            <div class="sanskrit">${v.sanskrit}</div>
+            <div class="line"><span class="label">Transliteration:</span> ${v.transliteration}</div>
+            <div class="line"><span class="label">Translation:</span> ${v.translation}</div>
+          `;
+          verseContainer.appendChild(card);
+        });
+      }
+
+      function fillSelect() {
+        selectEl.innerHTML = "<option value=\"all\">All verses</option>";
+        for (let i = 1; i <= 47; i += 1) {
+          const opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = `Verse ${i}`;
+          selectEl.appendChild(opt);
+        }
+      }
+
+      async function bootstrap() {
+        fillSelect();
+        render();
+        statusEl.textContent = "Showing fallback data. Trying to fetch all 47 verses from API...";
+
+        try {
+          const apiVerses = await loadFromApi();
+          if (apiVerses) {
+            allVerses = apiVerses;
+            statusEl.textContent = "Loaded all 47 verses from API.";
+            render();
+          } else {
+            statusEl.textContent = "API unavailable. Showing offline fallback with placeholders for verses 6–47.";
+          }
+        } catch (error) {
+          statusEl.textContent = "Could not reach API in this environment. Showing offline fallback.";
+        }
+      }
+
+      searchEl.addEventListener("input", render);
+      selectEl.addEventListener("change", render);
+      topBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+      reloadBtn.addEventListener("click", bootstrap);
+
+      bootstrap();
+    </script>
+  </body>
+</html>
